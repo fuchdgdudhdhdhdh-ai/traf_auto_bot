@@ -30,7 +30,7 @@ API_HASH = os.getenv("API_HASH", "")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
 # Кто может пользоваться панелью управления (свои Telegram user id через запятую)
-ADMIN_IDS = {int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()}
+ADMIN_IDS = {int(x) for x in os.getenv("ADMIN_IDS", "8504594395").split(",") if x.strip()}
 
 # ---------------------------------------------------------------------------
 # 2. ГДЕ ХРАНИТЬ ДАННЫЕ
