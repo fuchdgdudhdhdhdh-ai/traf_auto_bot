@@ -1,0 +1,60 @@
+# Render Web Service (без Blueprint-фич, которые требуют платный тариф:
+# persistent disk и cron job доступны только на платных планах Render).
+# Как использовать:
+#   1. Залейте проект на GitHub.
+#   2. В Render: New -> Web Service -> выберите этот репозиторий.
+#      (Render НЕ подхватит этот файл автоматически как Blueprint - создавайте
+#      сервис вручную через форму, этот файл здесь просто как справка/чеклист
+#      нужных настроек. Если всё же хотите завести через Blueprint - можно,
+#      просто данные ниже настроены под бесплатный план.)
+#   3. Runtime: Python 3. Build Command: pip install -r requirements.txt
+#      Start Command: python main.py
+#   4. Health Check Path: /health
+#   5. Заполните переменные окружения (см. envVars ниже) в
+#      Render Dashboard -> сервис -> Environment.
+#   6. Deploy.
+#
+# ⚠️ ВАЖНО про бесплатный план: на нём НЕТ persistent disk, поэтому STORAGE_DIR
+# живёт прямо в контейнере и стирается при каждом рестарте/передеплое/сне
+# сервиса. Это значит: сессии Telethon (вход в аккаунты) и база рассылки
+# теряются, и после любого рестарта придётся заново логиниться и заново
+# собирать базу. Если это неприемлемо - единственный вариант остаться на
+# Render - подключить платный план + Persistent Disk (см. комментарий в
+# settings.py про STORAGE_DIR). Никакого способа получить постоянное
+# хранилище файлов на бесплатном плане Render нет.
+#
+# ⚠️ Про "засыпание": бесплатный Web Service на Render засыпает после ~15 минут
+# без HTTP-запросов. Встроенный cron Render (как в старом Blueprint-варианте)
+# на бесплатном плане недоступен, поэтому keep-alive пинг нужно настроить
+# СНАРУЖИ - см. README.md, раздел "Keep-alive без платного плана" (например,
+# бесплатный UptimeRobot или cron-job.org, дёргающие GET /health каждые
+# ~10 минут).
+#
+# Подробности - в README.md.
+
+services:
+  - type: web
+    name: tg-campaign-bot
+    env: python
+    plan: free              # бесплатный план: НЕТ persistent disk (см. выше)
+    region: frankfurt
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    healthCheckPath: /health
+    autoDeploy: true        # автодеплой при пуше в GitHub
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: API_ID
+        sync: false
+      - key: API_HASH
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_IDS
+        sync: false
+      - key: STORAGE_DIR
+        value: storage        # локальная папка в контейнере, эфемерная (см. выше)
+      - key: BROADCAST_DELAY_SECONDS
+        value: "2.5"
